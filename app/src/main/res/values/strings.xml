@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">ImgurSearch</string>
+    <string name="search_hint">Enter your search text here</string>
+    <string name="search_title">Search For:</string>
+</resources>
