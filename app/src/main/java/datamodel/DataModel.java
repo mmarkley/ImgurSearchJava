@@ -11,15 +11,23 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.gson.Gson;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import androidx.annotation.NonNull;
+import datamodel.imgurdata.ImgurResponse;
 import networking.ImgurRequest;
 
 public class DataModel {
     private static final String TAG = DataModel.class.getSimpleName();
+
+    private static final DataModel theInstance = new DataModel();
+
+    public static DataModel getInstance() {
+        return theInstance;
+    }
 
     public interface DataModelCallback {
         void onSuccess(@NonNull DataCallbackSuccess success);
@@ -29,8 +37,15 @@ public class DataModel {
     RequestQueue queue = null;
     public void init(Context context) {
         queue = Volley.newRequestQueue(context);
+        queue.start();
     }
 
+    public void cleanup() {
+        if(null != queue) {
+            queue.stop();
+            queue.cancelAll(TAG);
+        }
+    }
     /**
      * Method to retrieve data from Imgur
      * @param searchString A {@link String} containing the terms to search for
@@ -51,6 +66,15 @@ public class DataModel {
                         public void onResponse(String response) {
                             // response
                             Log.d("Response", response);
+                            Gson gson = new Gson();
+                            try {
+                                ImgurResponse responseObject = gson.fromJson(response, ImgurResponse.class);
+                                DataCallbackSuccess success = new DataCallbackSuccess();
+                                success.imgurResponse = responseObject;
+                                callback.onSuccess(success);
+                            } catch(Exception e) {
+                                Log.e(TAG, "could not process json", e);
+                            }
                         }
                     },
                     new Response.ErrorListener()
