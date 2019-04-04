@@ -55,7 +55,8 @@ public class ImgurRequest {
                 .appendPath("search")
                 .appendPath("time")
                 .appendPath(Long.toString(pageNumber))
-                .appendQueryParameter("q", searchTerm);
+                .appendQueryParameter("q", searchTerm)
+                .appendQueryParameter("mature", "false");
 
         return builder.toString();
     }

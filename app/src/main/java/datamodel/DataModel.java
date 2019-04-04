@@ -2,6 +2,7 @@ package datamodel;
 
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.util.Log;
 
 import com.android.volley.AuthFailureError;
@@ -9,6 +10,7 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.ImageRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.gson.Gson;
@@ -17,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import androidx.annotation.NonNull;
+import datamodel.imgurdata.ImgurDataObject;
 import datamodel.imgurdata.ImgurResponse;
 import networking.ImgurRequest;
 
@@ -33,6 +36,8 @@ public class DataModel {
         void onSuccess(@NonNull DataCallbackSuccess success);
         void onFailure(@NonNull DataCallbackFailure failure);
     }
+
+    HashMap<String, ImgurDataObject> objectHashMap = new HashMap<>();
 
     RequestQueue queue = null;
     public void init(Context context) {
@@ -69,6 +74,9 @@ public class DataModel {
                             Gson gson = new Gson();
                             try {
                                 ImgurResponse responseObject = gson.fromJson(response, ImgurResponse.class);
+                                for(ImgurDataObject dataObject : responseObject.getData()) {
+                                    objectHashMap.put(dataObject.getId(), dataObject);
+                                }
                                 DataCallbackSuccess success = new DataCallbackSuccess();
                                 success.imgurResponse = responseObject;
                                 callback.onSuccess(success);
@@ -100,6 +108,17 @@ public class DataModel {
             callback.onFailure(failure);
         }
 
+    }
+
+    public void fetchBitmap(final String key, String uri, final BitmapCache.BitmapFoundCallback callback) {
+        ImageRequest imageRequest = new ImageRequest(uri, new Response.Listener<Bitmap>() {
+            @Override
+            public void onResponse(Bitmap bitmap) {
+                BitmapCache.getInstance().setBitmapForKey(key, bitmap);
+                callback.success(bitmap);
+            }
+        }, 0, 0, null, null);
+        queue.add(imageRequest);
     }
 
     /**
