@@ -14,7 +14,6 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.Navigation;
 import datamodel.DataCallbackFailure;
-import datamodel.DataCallbackSuccess;
 import datamodel.DataModel;
 import datamodel.imgurdata.ImgurDataObject;
 import datamodel.imgurdata.ImgurImage;
@@ -48,10 +47,19 @@ public class MainActivity extends AppCompatActivity implements DataModel.DataMod
         super.onDestroy();
     }
 
+    /**
+     * The MainActivity needs to know about the search activity so it can forward on the
+     * information that is received in {@link MainActivity#onSuccess(List)}
+     * @param searchFragment The {@link SearchFragment} to use to foward
+     */
     public void setSearchFragment(SearchFragment searchFragment) {
         this.searchFragment = searchFragment;
     }
 
+    /**
+     * Method to call into the {@link DataModel}and retrieve the images for the specified query
+     * @param query A {@link String} containing the search terms
+     */
     private void performSearch(String query) {
         DataModel.getInstance().fetchImages(query, this);
     }
@@ -65,8 +73,8 @@ public class MainActivity extends AppCompatActivity implements DataModel.DataMod
     }
 
     @Override
-    public void onSuccess(@NonNull DataCallbackSuccess success) {
-        searchFragment.updateData(success);
+    public void onSuccess(@NonNull List<ImgurDataObject> dataObjects) {
+        searchFragment.updateData(dataObjects);
     }
 
     @Override

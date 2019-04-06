@@ -25,10 +25,8 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.selection.OnContextClickListener;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import datamodel.DataCallbackSuccess;
+import datamodel.DataModel;
 import datamodel.imgurdata.ImgurDataObject;
-import datamodel.imgurdata.ImgurImage;
-import datamodel.imgurdata.ImgurResponse;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -38,11 +36,11 @@ public class SearchFragment extends Fragment implements OnContextClickListener {
 
     private WeakReference<Context> contextWeakReference;
     private RecyclerView imgurObjectRecycler;
+    private List<ImgurDataObject> dataObjects = new ArrayList<>();
 
     public SearchFragment() {
         // Required empty public constructor
     }
-
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, final ViewGroup container,
@@ -53,7 +51,7 @@ public class SearchFragment extends Fragment implements OnContextClickListener {
         Activity activity = getActivity();
         SearchView searchEditView = view.findViewById(R.id.main_search_view);
         imgurObjectRecycler = view.findViewById(R.id.main_search_results_view);
-        if(null != activity) {
+        if (null != activity) {
             SearchManager searchManager = (SearchManager) activity.getSystemService(Context.SEARCH_SERVICE);
             // Assumes current activity is the searchable activity
             searchEditView.setSearchableInfo(searchManager.getSearchableInfo(activity.getComponentName()));
@@ -65,53 +63,55 @@ public class SearchFragment extends Fragment implements OnContextClickListener {
 
     @Override
     public void onAttach(Context context) {
-        if(context instanceof MainActivity) {
-            ((MainActivity)context).setSearchFragment(this);
+        if (context instanceof MainActivity) {
+            ((MainActivity) context).setSearchFragment(this);
             contextWeakReference = new WeakReference<>(context);
         }
         super.onAttach(context);
     }
 
-    public void updateData(@NonNull DataCallbackSuccess success) {
-        ImgurResponse dataObject = success.getImgurResponse();
-        List<ImgurDataObject> imageObjects = dataObject.getData();
+    @Override
+    public void onResume() {
+        super.onResume();
+        Log.i(TAG, "onResume");
+        if (DataModel.getInstance().getCurrentObjectCount() > 0) {
+            imgurObjectRecycler.setFocusable(true);
+            imgurObjectRecycler.requestFocus();
+        }
+
+    }
+
+    public void updateData(@NonNull List<ImgurDataObject> imageObjects) {
         List<ImgurDataObject> safeObjects = new ArrayList<>();
-        for(int i = 0; i < imageObjects.size(); i++) {
+        boolean updateAdapter = dataObjects.size() > 0;
+
+        if(0 == imageObjects.size()) {
+            return;
+        }
+
+        for (int i = 0; i < imageObjects.size(); i++) {
             ImgurDataObject obj = imageObjects.get(i);
 
-            if(null != obj) {
-                if (obj.getNsfw()) {
-                    Log.i(TAG, "NSFW " + obj.getTitle());
-                } else {
-                    Integer imageCount = obj.getImagesCount();
-                    boolean addToList = true;
-
-                    if (null != imageCount && imageCount > 0) {
-                        List<ImgurImage> images = obj.getImages();
-                        for (ImgurImage image : images) {
-                            String link = image.getLink();
-                            // For now, we're going to exclude videos. Could be a future
-                            // enhancement.
-                            if(null == link || link.endsWith("mp4")) {
-                                addToList = false;
-                                break;
-                            }
-                        }
-                        // Move on to the next object
-                    }
-                    if(addToList) {
-                        safeObjects.add(obj);
-                    }
-                }
+            if (null != obj) {
+                safeObjects.add(obj);
             } else {
                 Log.e(TAG, "Got null object in array at index " + i);
             }
         }
-        Context context = contextWeakReference.get();
-        if(null != context) {
-            ImgurListAdapter adapter = new ImgurListAdapter(context, safeObjects);
-            adapter.setHasStableIds(true);
-            imgurObjectRecycler.setAdapter(adapter);
+
+        if (updateAdapter) {
+            dataObjects.addAll(safeObjects);
+            RecyclerView.Adapter adapter = imgurObjectRecycler.getAdapter();
+            if (null != adapter) {
+                adapter.notifyDataSetChanged();
+            }
+        } else {
+            Context context = contextWeakReference.get();
+            if (null != context) {
+                ImgurListAdapter adapter = new ImgurListAdapter(context, safeObjects);
+                adapter.setHasStableIds(true);
+                imgurObjectRecycler.setAdapter(adapter);
+            }
         }
     }
 

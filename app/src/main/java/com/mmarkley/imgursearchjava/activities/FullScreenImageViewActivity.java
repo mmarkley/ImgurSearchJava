@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
@@ -42,6 +43,8 @@ public class FullScreenImageViewActivity extends AppCompatActivity {
     private static final int UI_ANIMATION_DELAY = 300;
     private final Handler mHideHandler = new Handler();
     private ImageView imageView;
+    private String imageLink;
+
     private final Runnable mHidePart2Runnable = new Runnable() {
         @SuppressLint("InlinedApi")
         @Override
@@ -97,15 +100,19 @@ public class FullScreenImageViewActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_full_screen_image_view);
 
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.hide();
+        }
         mVisible = true;
         imageView = findViewById(R.id.fullscreen_content);
 
 
-        // Set up the user interaction to manually show or hide the system UI.
+        // Set up the user interaction to manually close this activity
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                toggle();
+                finish();
             }
         });
 
@@ -113,13 +120,19 @@ public class FullScreenImageViewActivity extends AppCompatActivity {
         if(intent != null) {
             Bundle extras = intent.getExtras();
             if (null != extras) {
-                String imageLink = extras.getString(MainActivity.BUNDLE_KEY);
-                if (null != imageLink) {
-                    if (null != imageView) {
-                        Log.i(TAG, "loading " + imageLink);
-                        Picasso.get().load(imageLink).placeholder(R.drawable.loading).into(imageView);
-                    }
-                }
+                imageLink = extras.getString(MainActivity.BUNDLE_KEY);
+
+            }
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (null != imageLink) {
+            if (null != imageView) {
+                Log.i(TAG, "loading " + imageLink);
+                Picasso.get().load(imageLink).placeholder(R.drawable.loading).fit().centerCrop(Gravity.HORIZONTAL_GRAVITY_MASK).into(imageView);
             }
         }
     }
@@ -131,7 +144,7 @@ public class FullScreenImageViewActivity extends AppCompatActivity {
         // Trigger the initial hide() shortly after the activity has been
         // created, to briefly hint to the user that UI controls
         // are available.
-        delayedHide(100);
+//        delayedHide(100);
     }
 
     private void toggle() {
@@ -158,13 +171,13 @@ public class FullScreenImageViewActivity extends AppCompatActivity {
     @SuppressLint("InlinedApi")
     private void show() {
         // Show the system bar
-        imageView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+//        imageView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+//                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
         mVisible = true;
 
         // Schedule a runnable to display UI elements after a delay
-        mHideHandler.removeCallbacks(mHidePart2Runnable);
-        mHideHandler.postDelayed(mShowPart2Runnable, UI_ANIMATION_DELAY);
+//        mHideHandler.removeCallbacks(mHidePart2Runnable);
+//        mHideHandler.postDelayed(mShowPart2Runnable, UI_ANIMATION_DELAY);
     }
 
     /**
@@ -172,7 +185,7 @@ public class FullScreenImageViewActivity extends AppCompatActivity {
      * previously scheduled calls.
      */
     private void delayedHide(int delayMillis) {
-        mHideHandler.removeCallbacks(mHideRunnable);
-        mHideHandler.postDelayed(mHideRunnable, delayMillis);
+//        mHideHandler.removeCallbacks(mHideRunnable);
+//        mHideHandler.postDelayed(mHideRunnable, delayMillis);
     }
 }
