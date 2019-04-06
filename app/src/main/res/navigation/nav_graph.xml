@@ -18,6 +18,10 @@
         android:id="@+id/fullScreenImageViewActivity"
         android:name="com.mmarkley.imgursearchjava.activities.FullScreenImageViewActivity"
         android:label="activity_full_screen_image_view"
-        tools:layout="@layout/activity_full_screen_image_view" />
+        tools:layout="@layout/activity_full_screen_image_view" >
+        <argument
+            android:name="DataObjectId"
+            app:argType="string" />
+    </activity>
 
 </navigation>

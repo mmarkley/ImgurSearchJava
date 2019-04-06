@@ -1,8 +1,6 @@
 package com.mmarkley.imgursearchjava.adapters;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,25 +10,22 @@ import android.widget.TextView;
 
 import com.mmarkley.imgursearchjava.MainActivity;
 import com.mmarkley.imgursearchjava.R;
+import com.squareup.picasso.Picasso;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-import datamodel.BitmapCache;
-import datamodel.DataModel;
 import datamodel.imgurdata.ImgurDataObject;
 import datamodel.imgurdata.ImgurImage;
 
-public class ImgurListAdapter extends RecyclerView.Adapter<ImgurListAdapter.ImgurListAdapterViewHolder> implements BitmapCache.BitmapFoundCallback {
+public class ImgurListAdapter extends RecyclerView.Adapter<ImgurListAdapter.ImgurListAdapterViewHolder>  {
     private static final String TAG = ImgurListAdapter.class.getSimpleName();
 
     private LayoutInflater inflater;
     private List<ImgurDataObject> data;
     private WeakReference<Context> contextWeakReference;
-    private int retrieveCount = 0;
-    private RecyclerView recyclerView;
 
     public ImgurListAdapter(@NonNull Context context, List<ImgurDataObject> strings) {
         this.inflater = LayoutInflater.from(context);
@@ -42,42 +37,25 @@ public class ImgurListAdapter extends RecyclerView.Adapter<ImgurListAdapter.Imgu
     @Override
     public ImgurListAdapterViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = inflater.inflate(R.layout.imgur_list_element, parent, false);
+        Log.i(TAG, "onCreateViewHolder ");
         return new ImgurListAdapterViewHolder(view);
-    }
-
-    public void setRecyclerView(RecyclerView recyclerView) {
-        this.recyclerView = recyclerView;
     }
 
     @Override
     public void onBindViewHolder(@NonNull ImgurListAdapterViewHolder holder, int position) {
         Log.i(TAG, "onBindViewHolder " + position);
-        if(null != data && position > 0 && position <= data.size()) {
+        if(null != data && position >= 0 && position <= data.size()) {
             ImgurDataObject item = data.get(position);
             Integer imageCount = item.getImagesCount();
             if (null != imageCount && imageCount > 0) {
                 List<ImgurImage> images = item.getImages();
-                for (ImgurImage image : images) {
-//                    Log.i(TAG, "\tImage URL " + image.getLink());
+                if(0 < images.size()) {
+                    ImgurImage image = images.get(0);
+                    Log.i(TAG, "\tImage URL " + image.getLink());
                     String link = image.getLink();
                     if(!link.endsWith("mp4")) {
-                        Bitmap bitmap = BitmapCache.getInstance().bitmapForKey(item.getId(), image.getLink(), this);
-                        if (null != bitmap) {
-                            holder.imageView.setImageBitmap(bitmap);
-                        } else {
-                            retrieveCount++;
-                            Log.i(TAG, "retrieveCount " + retrieveCount);
-                            DataModel.getInstance().fetchBitmap(item.getId(), image.getLink(), this);
-                            Context context = contextWeakReference.get();
-                            if (null != context) {
-                                bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.loading);
-                                holder.imageView.setImageBitmap(bitmap);
-                            }
-                        }
-                    } else {
-                        Log.i(TAG, "Won't load image " + link);
+                        Picasso.get().load(link).resize(800,600).placeholder(R.drawable.loading).into(holder.imageView);
                     }
-                    break;
                 }
             }
             holder.dataObject = item;
@@ -105,7 +83,11 @@ public class ImgurListAdapter extends RecyclerView.Adapter<ImgurListAdapter.Imgu
     };
     @Override
     public int getItemCount() {
-        return data != null ? data.size() : 0;
+        int itemCount = 0;
+        if(null != data) {
+            itemCount = data.size();
+        }
+        return itemCount;
     }
 
     /**
@@ -118,21 +100,18 @@ public class ImgurListAdapter extends RecyclerView.Adapter<ImgurListAdapter.Imgu
         if(index >= 0 && index < data.size()) {
             dataObject = data.get(index);
         }
+        Log.i(TAG, "At index: " + index + " found " + dataObject);
         return dataObject;
     }
 
     @Override
-    public void success(Bitmap bitmap) {
-        retrieveCount--;
-        Log.i(TAG, "onSuccess retrieveCount " + retrieveCount);
-        if(retrieveCount == 0) {
-            notifyDataSetChanged();
-        }
+    public void onViewRecycled(@NonNull ImgurListAdapterViewHolder viewHolder) {
+        Log.i(TAG, "onViewRecycled " + viewHolder);
     }
 
     @Override
-    public void failure(String error) {
-
+    public long getItemId(int position) {
+        return position;
     }
 
     class ImgurListAdapterViewHolder extends RecyclerView.ViewHolder {
@@ -141,7 +120,7 @@ public class ImgurListAdapter extends RecyclerView.Adapter<ImgurListAdapter.Imgu
         String idTag;
         ImgurDataObject dataObject;
 
-        public ImgurListAdapterViewHolder(@NonNull View itemView) {
+        ImgurListAdapterViewHolder(@NonNull View itemView) {
             super(itemView);
             textView = itemView.findViewById(R.id.imgur_list_element_label);
             imageView = itemView.findViewById(R.id.imgur_list_element_image);

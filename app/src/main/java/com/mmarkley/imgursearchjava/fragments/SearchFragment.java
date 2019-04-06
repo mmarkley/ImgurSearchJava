@@ -56,7 +56,7 @@ public class SearchFragment extends Fragment implements OnContextClickListener {
         if(null != activity) {
             SearchManager searchManager = (SearchManager) activity.getSystemService(Context.SEARCH_SERVICE);
             // Assumes current activity is the searchable activity
-            searchEditView.setSearchableInfo(searchManager.getSearchableInfo(getActivity().getComponentName()));
+            searchEditView.setSearchableInfo(searchManager.getSearchableInfo(activity.getComponentName()));
             searchEditView.setIconifiedByDefault(false);
             imgurObjectRecycler.setLayoutManager(new LinearLayoutManager(activity));
         }
@@ -83,17 +83,24 @@ public class SearchFragment extends Fragment implements OnContextClickListener {
                 if (obj.getNsfw()) {
                     Log.i(TAG, "NSFW " + obj.getTitle());
                 } else {
-                    safeObjects.add(obj);
-                    Log.i(TAG, "Imgur Object " + obj.getTitle());
-                    if(obj.getIsAlbum()) {
-                        Log.i(TAG, "This is an album");
-                    }
                     Integer imageCount = obj.getImagesCount();
+                    boolean addToList = true;
+
                     if (null != imageCount && imageCount > 0) {
                         List<ImgurImage> images = obj.getImages();
                         for (ImgurImage image : images) {
-                            Log.i(TAG, "\tImage URL " + image.getLink());
+                            String link = image.getLink();
+                            // For now, we're going to exclude videos. Could be a future
+                            // enhancement.
+                            if(null == link || link.endsWith("mp4")) {
+                                addToList = false;
+                                break;
+                            }
                         }
+                        // Move on to the next object
+                    }
+                    if(addToList) {
+                        safeObjects.add(obj);
                     }
                 }
             } else {
@@ -105,7 +112,6 @@ public class SearchFragment extends Fragment implements OnContextClickListener {
             ImgurListAdapter adapter = new ImgurListAdapter(context, safeObjects);
             adapter.setHasStableIds(true);
             imgurObjectRecycler.setAdapter(adapter);
-            adapter.setRecyclerView(imgurObjectRecycler);
         }
     }
 
