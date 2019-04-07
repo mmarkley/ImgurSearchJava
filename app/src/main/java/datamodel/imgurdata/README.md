@@ -1,0 +1,1 @@
+-- The Classes defined here were auto-generated using http://www.jsonschema2pojo.org/
