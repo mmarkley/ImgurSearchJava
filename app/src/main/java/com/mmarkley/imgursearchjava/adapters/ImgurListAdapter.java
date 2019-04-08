@@ -6,10 +6,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.mmarkley.imgursearchjava.MainActivity;
 import com.mmarkley.imgursearchjava.R;
+import com.mmarkley.imgursearchjava.datamodel.imgurdata.ImgurDataObject;
+import com.mmarkley.imgursearchjava.datamodel.imgurdata.ImgurImage;
 import com.squareup.picasso.Picasso;
 
 import java.lang.ref.WeakReference;
@@ -17,8 +21,6 @@ import java.util.List;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-import datamodel.imgurdata.ImgurDataObject;
-import datamodel.imgurdata.ImgurImage;
 
 public class ImgurListAdapter extends RecyclerView.Adapter<ImgurListAdapter.ImgurListAdapterViewHolder>  {
     private static final String TAG = ImgurListAdapter.class.getSimpleName();
@@ -58,6 +60,17 @@ public class ImgurListAdapter extends RecyclerView.Adapter<ImgurListAdapter.Imgu
                     }
                 }
             }
+            if(position + 1 == data.size()) {
+                holder.progressBar.setVisibility(View.VISIBLE);
+                holder.imageView.setVisibility(View.GONE);
+                holder.textView.setVisibility(View.GONE);
+            } else {
+                holder.progressBar.setVisibility(View.GONE);
+                holder.imageView.setVisibility(View.VISIBLE);
+                holder.textView.setVisibility(View.VISIBLE);
+            }
+            holder.position = position;
+            holder.linearLayout.setTag(holder);
             holder.dataObject = item;
             holder.imageView.setOnClickListener(clickListener);
             holder.textView.setText(item.getTitle());
@@ -114,16 +127,37 @@ public class ImgurListAdapter extends RecyclerView.Adapter<ImgurListAdapter.Imgu
         return position;
     }
 
+    /**
+     * Method to determine if we need to try and load more data.
+     * @param view {@link View} to test with
+     * @return {@link boolean} true if we are near the end, false otherwise
+     */
+    public boolean needMoreData(@NonNull View view) {
+        ImgurListAdapterViewHolder holder = (ImgurListAdapterViewHolder)view.getTag();
+        if(null != holder) {
+            return (holder.position + 4) > data.size();
+        }
+        return false;
+    }
+
+    /**
+     * Class used to hold data for our list
+     */
     class ImgurListAdapterViewHolder extends RecyclerView.ViewHolder {
+        LinearLayout linearLayout;
         TextView textView;
         ImageView imageView;
         String idTag;
         ImgurDataObject dataObject;
+        ProgressBar progressBar;
+        int position;
 
         ImgurListAdapterViewHolder(@NonNull View itemView) {
             super(itemView);
             textView = itemView.findViewById(R.id.imgur_list_element_label);
             imageView = itemView.findViewById(R.id.imgur_list_element_image);
+            linearLayout = itemView.findViewById(R.id.imgur_list_element_layout);
+            progressBar = itemView.findViewById(R.id.imgur_list_element_loading);
         }
     }
 }

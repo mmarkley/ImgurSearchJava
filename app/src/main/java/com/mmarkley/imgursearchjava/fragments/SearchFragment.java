@@ -10,10 +10,15 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
 
 import com.mmarkley.imgursearchjava.MainActivity;
 import com.mmarkley.imgursearchjava.R;
 import com.mmarkley.imgursearchjava.adapters.ImgurListAdapter;
+import com.mmarkley.imgursearchjava.datamodel.DataModel;
+import com.mmarkley.imgursearchjava.datamodel.imgurdata.ImgurDataObject;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -25,8 +30,6 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.selection.OnContextClickListener;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import datamodel.DataModel;
-import datamodel.imgurdata.ImgurDataObject;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -34,9 +37,13 @@ import datamodel.imgurdata.ImgurDataObject;
 public class SearchFragment extends Fragment implements OnContextClickListener {
     private static final String TAG = SearchFragment.class.getSimpleName();
 
-    private WeakReference<Context> contextWeakReference;
+    private WeakReference<MainActivity> activityWeakReference;
     private RecyclerView imgurObjectRecycler;
+    private SearchView searchEditView;
     private List<ImgurDataObject> dataObjects = new ArrayList<>();
+    private String filterType;
+    private Spinner spinner;
+    private RecyclerView.LayoutManager layoutManager;
 
     public SearchFragment() {
         // Required empty public constructor
@@ -49,23 +56,62 @@ public class SearchFragment extends Fragment implements OnContextClickListener {
         View view = inflater.inflate(R.layout.fragment_search, container, false);
         // Get the SearchView and set the searchable configuration
         Activity activity = getActivity();
-        SearchView searchEditView = view.findViewById(R.id.main_search_view);
+        searchEditView = view.findViewById(R.id.main_search_view);
         imgurObjectRecycler = view.findViewById(R.id.main_search_results_view);
+        imgurObjectRecycler.addOnScrollListener(scrollListener);
+        spinner = view.findViewById(R.id.main_filter_spinner);
         if (null != activity) {
             SearchManager searchManager = (SearchManager) activity.getSystemService(Context.SEARCH_SERVICE);
             // Assumes current activity is the searchable activity
             searchEditView.setSearchableInfo(searchManager.getSearchableInfo(activity.getComponentName()));
             searchEditView.setIconifiedByDefault(false);
-            imgurObjectRecycler.setLayoutManager(new LinearLayoutManager(activity));
+            layoutManager = new LinearLayoutManager(activity);
+            imgurObjectRecycler.setLayoutManager(layoutManager);
+            if (null != spinner) {
+                ArrayAdapter<CharSequence> arrayAdapter = ArrayAdapter.createFromResource(
+                        activity,
+                        R.array.filter_labels,
+                        android.R.layout.simple_spinner_item);
+                spinner.setAdapter(arrayAdapter);
+                filterType = getString(R.string.filter_first_selection);
+                spinner.setSelection(arrayAdapter.getPosition(filterType));
+                spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                    @Override
+                    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                        onSpinnerSelected();
+                    }
+
+                    @Override
+                    public void onNothingSelected(AdapterView<?> parent) {
+
+                    }
+
+                });
+            }
+
         }
         return view;
     }
 
+    private void onSpinnerSelected() {
+        String newFilter = (String)spinner.getSelectedItem();
+        if(newFilter.equals(filterType)) {
+            return;
+        }
+        filterType = newFilter;
+        String queryString = searchEditView.getQuery().toString();
+        searchEditView.setQuery(queryString, true);
+    }
+
+    public String getFilterType() {
+        return filterType;
+    }
+
     @Override
-    public void onAttach(Context context) {
+    public void onAttach(@NonNull Context context) {
         if (context instanceof MainActivity) {
             ((MainActivity) context).setSearchFragment(this);
-            contextWeakReference = new WeakReference<>(context);
+            activityWeakReference = new WeakReference<>((MainActivity)context);
         }
         super.onAttach(context);
     }
@@ -106,9 +152,9 @@ public class SearchFragment extends Fragment implements OnContextClickListener {
                 adapter.notifyDataSetChanged();
             }
         } else {
-            Context context = contextWeakReference.get();
-            if (null != context) {
-                ImgurListAdapter adapter = new ImgurListAdapter(context, safeObjects);
+            MainActivity activity = activityWeakReference.get();
+            if (null != activity) {
+                ImgurListAdapter adapter = new ImgurListAdapter(activity, safeObjects);
                 adapter.setHasStableIds(true);
                 imgurObjectRecycler.setAdapter(adapter);
             }
@@ -119,4 +165,24 @@ public class SearchFragment extends Fragment implements OnContextClickListener {
     public boolean onContextClick(@NonNull MotionEvent e) {
         return false;
     }
+
+    private RecyclerView.OnScrollListener scrollListener = new RecyclerView.OnScrollListener() {
+        @Override
+        public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+            super.onScrolled(recyclerView, dx, dy);
+            int childCount = recyclerView.getChildCount();
+            if(0 < childCount) {
+                View child = recyclerView.getChildAt(childCount - 1);
+                RecyclerView.Adapter adapter = recyclerView.getAdapter();
+                if(adapter instanceof ImgurListAdapter) {
+                    if(((ImgurListAdapter) adapter).needMoreData(child)) {
+                        MainActivity activity = activityWeakReference.get();
+                        if(null != activity) {
+                            activity.nextPage(searchEditView.getQuery().toString());
+                        }
+                    }
+                }
+            }
+        }
+    };
 }

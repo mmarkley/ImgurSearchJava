@@ -5,11 +5,14 @@
     <string name="image_content_desc">Imgur Image</string>
     <string name="search_fragment_title">Search</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
-
     <string name="title_activity_full_screen_image_view">FullScreenImageViewActivity</string>
-    <string name="back_button">Back Button</string>
-    <string name="dummy_content">DUMMY\nCONTENT</string>
     <string name="full_screen_image_content_desc">Full Screen image</string>
+    <string name="search_screen_filter_title">Filter By:</string>
+    <string name="filter_first_selection">viral</string>
+    <string-array name="filter_labels">
+        <item>Viral</item>
+        <item>top</item>
+        <item>time</item>
+        <item>rising</item>
+    </string-array>
 </resources>

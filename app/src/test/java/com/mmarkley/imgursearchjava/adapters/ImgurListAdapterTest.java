@@ -2,6 +2,8 @@ package com.mmarkley.imgursearchjava.adapters;
 
 import android.content.Context;
 
+import com.mmarkley.imgursearchjava.datamodel.imgurdata.ImgurDataObject;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -12,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import androidx.test.platform.app.InstrumentationRegistry;
-import datamodel.imgurdata.ImgurDataObject;
 
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.TestCase.assertEquals;
