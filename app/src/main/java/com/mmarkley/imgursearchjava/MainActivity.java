@@ -72,6 +72,11 @@ public class MainActivity extends AppCompatActivity implements DataModel.DataMod
         DataModel.getInstance().fetchImages(request, this);
     }
 
+    /**
+     * method used by the SearchView in the {@link SearchFragment} to return the text that the
+     * user entered
+     * @param intent An {@link Intent} containing the search term
+     */
     @Override
     public void onNewIntent(Intent intent) {
         if (Intent.ACTION_SEARCH.equals(intent.getAction())) {

@@ -101,7 +101,7 @@ public class DataModel {
             return;
         }
 
-
+        // Build a new Volley StringRequest
         StringRequest getRequest = new StringRequest(Request.Method.GET, request.getUrl(),
                 new Response.Listener<String>() {
                     @Override
@@ -182,7 +182,7 @@ public class DataModel {
     }
 
     /**
-     * Method to test the search terms to verify that they are SFW
+     * Method to test the search terms to verify that it is not null and contains at least 1 character
      *
      * @param searchString The {@link String} to validate
      * @return {@link boolean} true if the searchString is safe, {@link boolean} false otherwise

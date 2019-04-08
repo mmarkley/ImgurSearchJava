@@ -43,6 +43,16 @@ public class ImgurListAdapter extends RecyclerView.Adapter<ImgurListAdapter.Imgu
         return new ImgurListAdapterViewHolder(view);
     }
 
+    /**
+     * Method to add new items to the data
+     * @param dataObjects @ {@link List} of {@link ImgurDataObject}s
+     */
+    public void addData(List<ImgurDataObject> dataObjects) {
+        if (null != data) {
+            data.addAll(dataObjects);
+        }
+    }
+
     @Override
     public void onBindViewHolder(@NonNull ImgurListAdapterViewHolder holder, int position) {
         Log.i(TAG, "onBindViewHolder " + position);
@@ -105,6 +115,7 @@ public class ImgurListAdapter extends RecyclerView.Adapter<ImgurListAdapter.Imgu
 
     /**
      * Method to get object at a specific index
+     *
      * @param index {@link int} with the index value
      * @return A {@link ImgurDataObject} if the index is in range, null otherwise
      */

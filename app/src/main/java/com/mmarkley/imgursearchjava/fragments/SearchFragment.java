@@ -40,13 +40,15 @@ public class SearchFragment extends Fragment implements OnContextClickListener {
     private WeakReference<MainActivity> activityWeakReference;
     private RecyclerView imgurObjectRecycler;
     private SearchView searchEditView;
-    private List<ImgurDataObject> dataObjects = new ArrayList<>();
+    private List<ImgurDataObject> dataObjects = null;
     private String filterType;
     private Spinner spinner;
-    private RecyclerView.LayoutManager layoutManager;
+
+    private boolean pageRequested = false;
 
     public SearchFragment() {
         // Required empty public constructor
+        dataObjects = new ArrayList<>();
     }
 
     @Override
@@ -65,7 +67,7 @@ public class SearchFragment extends Fragment implements OnContextClickListener {
             // Assumes current activity is the searchable activity
             searchEditView.setSearchableInfo(searchManager.getSearchableInfo(activity.getComponentName()));
             searchEditView.setIconifiedByDefault(false);
-            layoutManager = new LinearLayoutManager(activity);
+            RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(activity);
             imgurObjectRecycler.setLayoutManager(layoutManager);
             if (null != spinner) {
                 ArrayAdapter<CharSequence> arrayAdapter = ArrayAdapter.createFromResource(
@@ -93,6 +95,9 @@ public class SearchFragment extends Fragment implements OnContextClickListener {
         return view;
     }
 
+    /**
+     * Method to handle a change in selection in the Spinner
+     */
     private void onSpinnerSelected() {
         String newFilter = (String)spinner.getSelectedItem();
         if(newFilter.equals(filterType)) {
@@ -127,9 +132,16 @@ public class SearchFragment extends Fragment implements OnContextClickListener {
 
     }
 
+    /**
+     * Method to update the Results list through either updating the existing adapter with new
+     * data or creating a new {@link ImgurListAdapter}
+     * @param imageObjects A {@link List} of {@link ImgurDataObject}s to display
+     */
     public void updateData(@NonNull List<ImgurDataObject> imageObjects) {
+        pageRequested = false;
         List<ImgurDataObject> safeObjects = new ArrayList<>();
-        boolean updateAdapter = dataObjects.size() > 0;
+        int dataObjectSize = dataObjects.size();
+        boolean updateAdapter = dataObjectSize > 0;
 
         if(0 == imageObjects.size()) {
             return;
@@ -145,11 +157,15 @@ public class SearchFragment extends Fragment implements OnContextClickListener {
             }
         }
 
+        // Save the newly returned objects into the dataObjects List
+        dataObjects.addAll(safeObjects);
+
         if (updateAdapter) {
-            dataObjects.addAll(safeObjects);
-            RecyclerView.Adapter adapter = imgurObjectRecycler.getAdapter();
+            ImgurListAdapter adapter = (ImgurListAdapter)imgurObjectRecycler.getAdapter();
+
             if (null != adapter) {
-                adapter.notifyDataSetChanged();
+                adapter.addData(safeObjects);
+                adapter.notifyItemRangeInserted(dataObjectSize, safeObjects.size());
             }
         } else {
             MainActivity activity = activityWeakReference.get();
@@ -166,10 +182,17 @@ public class SearchFragment extends Fragment implements OnContextClickListener {
         return false;
     }
 
+    /*
+     Class to listen for scroll events on the RecyclerView and to generate a page request
+     for more data from the Imgur server
+     */
     private RecyclerView.OnScrollListener scrollListener = new RecyclerView.OnScrollListener() {
         @Override
         public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
             super.onScrolled(recyclerView, dx, dy);
+            if(pageRequested) {
+                return;
+            }
             int childCount = recyclerView.getChildCount();
             if(0 < childCount) {
                 View child = recyclerView.getChildAt(childCount - 1);
@@ -178,6 +201,7 @@ public class SearchFragment extends Fragment implements OnContextClickListener {
                     if(((ImgurListAdapter) adapter).needMoreData(child)) {
                         MainActivity activity = activityWeakReference.get();
                         if(null != activity) {
+                            pageRequested = true;
                             activity.nextPage(searchEditView.getQuery().toString());
                         }
                     }
